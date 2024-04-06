@@ -20,8 +20,14 @@ class Borrowing(models.Model):
         if borrow_date > expected_return_date:
             raise ValidationError("Borrow date should be less than expected or actual return date")
 
+    @staticmethod
+    def validate_book_amount(book):
+        if not book.inventory > 0:
+            raise ValidationError("This book is out of stock")
+
     def clean(self):
         Borrowing.validate_dates(self.borrow_date, self.expected_return_date)
+        Borrowing.validate_book_amount(self.book)
 
     def save(
         self, force_insert=False, force_update=False, using=None, update_fields=None
