@@ -5,6 +5,7 @@ from borrowings.models import Borrowing
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Borrowing
         fields = [
@@ -17,5 +18,21 @@ class BorrowingSerializer(serializers.ModelSerializer):
         ]
 
 
-class BorrowingDetailSerializer(BorrowingSerializer):
+class BorrowingPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Borrowing
+        fields = [
+            "id",
+            "borrow_date",
+            "expected_return_date",
+            "book",
+        ]
+
+
+class BorrowingListSerializer(BorrowingSerializer):
+    book = serializers.CharField(source="book.title", read_only=True)
+    user = serializers.CharField(source="user.email", read_only=True)
+
+
+class BorrowingDetailSerializer(BorrowingListSerializer):
     book = BookSerializer(read_only=True)
