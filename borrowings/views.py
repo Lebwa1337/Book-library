@@ -39,3 +39,15 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         book.inventory = book.inventory - 1
         book.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def get_queryset(self):
+        queryset = Borrowing.objects.all()
+        is_active = self.request.query_params.get("is_active")
+        user_id = self.request.query_params.get("user_id")
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+        if is_active == "1":
+            queryset = queryset.filter(actual_return_date=None)
+        if user_id and self.request.user.is_staff:
+            queryset = queryset.filter(user_id=int(user_id))
+        return queryset
