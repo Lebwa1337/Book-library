@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.generics import GenericAPIView, CreateAPIView
@@ -67,8 +68,9 @@ class ReturnBorrowing(CreateAPIView):
         borrowing = Borrowing.objects.get(id=borrowing_id)
         if borrowing.actual_return_date:
             raise PermissionError("This book was already returned")
-        if borrowing.user == self.request.user:
-            borrowing.book.inventory += 1
-            borrowing.actual_return_date = datetime.now()
-            borrowing.save()
+        with transaction.atomic():
+            if borrowing.user == self.request.user:
+                borrowing.book.inventory += 1
+                borrowing.actual_return_date = datetime.now()
+                borrowing.save()
         return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
