@@ -5,6 +5,7 @@ from borrowings.models import Borrowing
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
+    actual_return_date = serializers.DateField(read_only=True)
 
     class Meta:
         model = Borrowing
@@ -36,3 +37,7 @@ class BorrowingListSerializer(BorrowingSerializer):
 
 class BorrowingDetailSerializer(BorrowingListSerializer):
     book = BookSerializer(read_only=True)
+
+
+class BorrowingReturnSerializer(serializers.Serializer):
+    borrowing_id = serializers.IntegerField()

@@ -1,6 +1,11 @@
+from datetime import datetime
+
 from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.generics import GenericAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from books.models import Book
 from borrowings.models import Borrowing
@@ -8,7 +13,7 @@ from borrowings.serializers import (
     BorrowingSerializer,
     BorrowingDetailSerializer,
     BorrowingListSerializer,
-    BorrowingPostSerializer
+    BorrowingPostSerializer, BorrowingReturnSerializer
 )
 
 
@@ -51,3 +56,19 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         if user_id and self.request.user.is_staff:
             queryset = queryset.filter(user_id=int(user_id))
         return queryset
+
+
+class ReturnBorrowing(CreateAPIView):
+    serializer_class = BorrowingReturnSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        borrowing_id = self.request.data.get("borrowing_id")
+        borrowing = Borrowing.objects.get(id=borrowing_id)
+        if borrowing.actual_return_date:
+            raise PermissionError("This book was already returned")
+        if borrowing.user == self.request.user:
+            borrowing.book.inventory += 1
+            borrowing.actual_return_date = datetime.now()
+            borrowing.save()
+        return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
