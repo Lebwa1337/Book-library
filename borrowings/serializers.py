@@ -36,3 +36,7 @@ class BorrowingListSerializer(BorrowingSerializer):
 
 class BorrowingDetailSerializer(BorrowingListSerializer):
     book = BookSerializer(read_only=True)
+
+
+class BorrowingReturnSerializer(serializers.Serializer):
+    borrowing_id = serializers.IntegerField()
