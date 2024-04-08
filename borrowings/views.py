@@ -1,11 +1,10 @@
 from datetime import datetime
 
+from django.db import transaction
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import GenericAPIView, CreateAPIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from books.models import Book
 from borrowings.models import Borrowing
@@ -15,6 +14,7 @@ from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingPostSerializer, BorrowingReturnSerializer
 )
+from utilities.send_telegram_message import send_tg_message
 
 
 class BorrowingsViewSet(viewsets.ModelViewSet):
@@ -43,6 +43,15 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         book = Book.objects.get(id=book_id)
         book.inventory = book.inventory - 1
         book.save()
+        borrowing_id = serializer.data.get("id")
+        borrowing = Borrowing.objects.get(id=borrowing_id)
+        send_tg_message(
+            f"You successfully borrowed {book.title}.\n"
+            f"Detail info:\n"
+            f"Borrow date is {borrowing.borrow_date}\n"
+            f"Return book at: {borrowing.expected_return_date}\n"
+            f"Daily fee is {borrowing.book.daily_fee} USD$"
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
@@ -67,8 +76,11 @@ class ReturnBorrowing(CreateAPIView):
         borrowing = Borrowing.objects.get(id=borrowing_id)
         if borrowing.actual_return_date:
             raise PermissionError("This book was already returned")
-        if borrowing.user == self.request.user:
-            borrowing.book.inventory += 1
-            borrowing.actual_return_date = datetime.now()
-            borrowing.save()
-        return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
+        with transaction.atomic():
+            if borrowing.user == self.request.user:
+                borrowing.book.inventory += 1
+                borrowing.actual_return_date = datetime.now()
+                borrowing.save()
+                send_tg_message(f"Your book:{borrowing.book} has been successfully returned")
+                return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
+        return Response({"message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
