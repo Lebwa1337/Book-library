@@ -6,7 +6,6 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utilities.send_telegram_message import send_tg_message
 from books.models import Book
 from borrowings.models import Borrowing
 from borrowings.serializers import (
@@ -15,6 +14,7 @@ from borrowings.serializers import (
     BorrowingListSerializer,
     BorrowingPostSerializer, BorrowingReturnSerializer
 )
+from utilities.send_telegram_message import send_tg_message
 
 
 class BorrowingsViewSet(viewsets.ModelViewSet):
@@ -43,6 +43,15 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         book = Book.objects.get(id=book_id)
         book.inventory = book.inventory - 1
         book.save()
+        borrowing_id = serializer.data.get("id")
+        borrowing = Borrowing.objects.get(id=borrowing_id)
+        send_tg_message(
+            f"You successfully borrowed {book.title}.\n"
+            f"Detail info:\n"
+            f"Borrow date is {borrowing.borrow_date}\n"
+            f"Return book at: {borrowing.expected_return_date}\n"
+            f"Daily fee is {borrowing.book.daily_fee} USD$"
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
