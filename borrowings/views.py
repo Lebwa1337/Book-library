@@ -2,12 +2,11 @@ from datetime import datetime
 
 from django.db import transaction
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.generics import GenericAPIView, CreateAPIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
+from utilities.send_telegram_message import send_tg_message
 from books.models import Book
 from borrowings.models import Borrowing
 from borrowings.serializers import (
@@ -73,4 +72,6 @@ class ReturnBorrowing(CreateAPIView):
                 borrowing.book.inventory += 1
                 borrowing.actual_return_date = datetime.now()
                 borrowing.save()
-        return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
+                send_tg_message(f"Your book:{borrowing.book} has been successfully returned")
+                return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
+        return Response({"message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
