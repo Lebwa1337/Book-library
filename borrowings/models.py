@@ -13,7 +13,7 @@ class Borrowing(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.book
+        return self.book.title
 
     @staticmethod
     def validate_dates(borrow_date, expected_return_date):
