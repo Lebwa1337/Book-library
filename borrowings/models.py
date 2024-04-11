@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from books.models import Book
 from users.models import User
@@ -34,3 +35,26 @@ class Borrowing(models.Model):
     ):
         self.full_clean()
         return super(Borrowing, self).save(force_insert, force_update, using, update_fields)
+
+
+class Payment(models.Model):
+    """Payment model."""
+    class PaymentStatus(models.TextChoices):
+        PENDING = "PEN", _("Pending")
+        PAID = "PAID", _("Paid")
+
+    class PaymentType(models.TextChoices):
+        PAYMENT = "PAY", _("Payment")
+        FINE = "FINE", _("Fine")
+    status = models.CharField(
+        max_length=4,
+        choices=PaymentStatus.choices
+    )
+    type = models.CharField(
+        max_length=4,
+        choices=PaymentType.choices
+    )
+    borrowing = models.ForeignKey(Borrowing, on_delete=models.CASCADE, related_name="payment")
+    session_url = models.URLField(max_length=300)
+    session_id = models.CharField(max_length=55)
+    money_to_pay = models.DecimalField(max_digits=5, decimal_places=2)
