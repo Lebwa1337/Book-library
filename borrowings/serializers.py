@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from books.serializers import BookSerializer
-from borrowings.models import Borrowing
+from borrowings.models import Borrowing, Payment
 
 
 class BorrowingSerializer(serializers.ModelSerializer):
@@ -41,3 +41,17 @@ class BorrowingDetailSerializer(BorrowingListSerializer):
 
 class BorrowingReturnSerializer(serializers.Serializer):
     borrowing_id = serializers.IntegerField()
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = [
+            "id",
+            "status",
+            "type",
+            "borrowing",
+            "session_url",
+            "session_id",
+            "money_to_pay"
+        ]
