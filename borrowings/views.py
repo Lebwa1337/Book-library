@@ -7,12 +7,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from books.models import Book
-from borrowings.models import Borrowing
+from borrowings.models import Borrowing, Payment
 from borrowings.serializers import (
     BorrowingSerializer,
     BorrowingDetailSerializer,
     BorrowingListSerializer,
-    BorrowingPostSerializer, BorrowingReturnSerializer
+    BorrowingPostSerializer, BorrowingReturnSerializer, PaymentSerializer
 )
 from utilities.send_telegram_message import send_tg_message
 
@@ -84,3 +84,18 @@ class ReturnBorrowing(CreateAPIView):
                 send_tg_message(f"Your book:{borrowing.book} has been successfully returned")
                 return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
         return Response({"message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    serializer_class = PaymentSerializer
+    queryset = Payment.objects.all()
+    permission_classes = [IsAuthenticated,]
+
+    def get_queryset(self):
+        queryset = Payment.objects.all()
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(borrowing__user=self.request.user)
+        return queryset
+
+
+
