@@ -145,3 +145,5 @@ AUTH_USER_MODEL = "users.User"
 
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER', 'redis://redis:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_BACKEND', 'redis://redis:6379/0')
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")

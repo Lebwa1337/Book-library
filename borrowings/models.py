@@ -40,21 +40,23 @@ class Borrowing(models.Model):
 class Payment(models.Model):
     """Payment model."""
     class PaymentStatus(models.TextChoices):
-        PENDING = "PEN", _("Pending")
+        PENDING = "PENDING", _("Pending")
         PAID = "PAID", _("Paid")
 
     class PaymentType(models.TextChoices):
-        PAYMENT = "PAY", _("Payment")
+        PAYMENT = "PAYMENT", _("Payment")
         FINE = "FINE", _("Fine")
     status = models.CharField(
-        max_length=4,
-        choices=PaymentStatus.choices
+        max_length=10,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
     )
     type = models.CharField(
-        max_length=4,
-        choices=PaymentType.choices
+        max_length=10,
+        choices=PaymentType.choices,
+        default=PaymentType.PAYMENT,
     )
     borrowing = models.ForeignKey(Borrowing, on_delete=models.CASCADE, related_name="payment")
-    session_url = models.URLField(max_length=300)
+    session_url = models.URLField(max_length=1000)
     session_id = models.CharField(max_length=55)
     money_to_pay = models.DecimalField(max_digits=5, decimal_places=2)

@@ -13,7 +13,6 @@ router.register("payments", PaymentViewSet)
 urlpatterns = [
     path("", include(router.urls)),
     path("borrowings-return/", ReturnBorrowing.as_view(), name="return_borrowing"),
-
 ]
 
 

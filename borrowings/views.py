@@ -1,7 +1,9 @@
 from datetime import datetime
 
+import stripe
 from django.db import transaction
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +17,7 @@ from borrowings.serializers import (
     BorrowingPostSerializer, BorrowingReturnSerializer, PaymentSerializer
 )
 from utilities.send_telegram_message import send_tg_message
+from utilities.stripe_helper import stripe_helper
 
 
 class BorrowingsViewSet(viewsets.ModelViewSet):
@@ -34,6 +37,7 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -45,6 +49,7 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         book.save()
         borrowing_id = serializer.data.get("id")
         borrowing = Borrowing.objects.get(id=borrowing_id)
+        stripe_helper(borrowing)
         send_tg_message(
             f"You successfully borrowed {book.title}.\n"
             f"Detail info:\n"
@@ -97,5 +102,33 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(borrowing__user=self.request.user)
         return queryset
 
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="success"
+    )
+    def success(self, request, pk=None):
+        payment = Payment.objects.get(id=pk)
+        session = stripe.checkout.Session.retrieve(payment.session_id)
+        if session.payment_status == "paid":
+            payment.status = "PAID"
+            payment.save()
+            return Response(
+                {"message": "Payment success"},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            {"message": "Payment wasn't paid"},
+            status=status.HTTP_200_OK
+        )
 
-
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="cancel"
+    )
+    def cancel(self, request, pk=None):
+        return Response(
+            {"message": "Payment cancelled"},
+            status=status.HTTP_200_OK
+        )
