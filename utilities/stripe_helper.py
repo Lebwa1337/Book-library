@@ -37,8 +37,9 @@ def stripe_helper(borrowing):
             },
         ],
         mode='payment',
-        success_url=reverse("payments:success"),
-        cancel_url=reverse("payments:cancel")
+        success_url=("http://localhost:8000/api/"
+                     "payments/success/"),
+        cancel_url="http://localhost:8000/api/payments/cancel/"
     )
     Payment.objects.create(
         borrowing=borrowing,

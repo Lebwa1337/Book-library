@@ -86,6 +86,7 @@ class ReturnBorrowing(CreateAPIView):
                 borrowing.book.inventory += 1
                 borrowing.actual_return_date = datetime.now()
                 borrowing.save()
+                borrowing.create_fine_if_overdue()
                 send_tg_message(f"Your book:{borrowing.book} has been successfully returned")
                 return Response({"message": "Borrowing successfully returned"}, status=status.HTTP_200_OK)
         return Response({"message": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
