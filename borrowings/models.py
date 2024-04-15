@@ -1,5 +1,7 @@
+import stripe
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from books.models import Book
@@ -35,6 +37,40 @@ class Borrowing(models.Model):
     ):
         self.full_clean()
         return super(Borrowing, self).save(force_insert, force_update, using, update_fields)
+
+    @transaction.atomic
+    def create_fine_if_overdue(self):
+        if self.actual_return_date > self.expected_return_date:
+            days_overdue = (
+                    self.actual_return_date - self.expected_return_date
+            ).days
+
+            fine_amount = (days_overdue * self.book.daily_fee * 2) * 100
+
+            price = stripe.Price.create(
+                product='prod_PuIXD7rHUrikDl',
+                unit_amount=int(fine_amount),
+                currency="usd",
+            )
+
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[
+                    {
+                        "price": price,
+                        'quantity': 1,
+                    },
+                ],
+                mode='payment',
+                success_url=("http://localhost:8000/api/"
+                             "payments/success/"),
+                cancel_url="http://localhost:8000/api/payments/cancel/"
+            )
+            Payment.objects.create(
+                borrowing=self,
+                session_url=checkout_session.url,
+                session_id=checkout_session.id,
+                money_to_pay=fine_amount / 100,
+            )
 
 
 class Payment(models.Model):
