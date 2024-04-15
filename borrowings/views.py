@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db import transaction
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -100,5 +101,24 @@ class PaymentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(borrowing__user=self.request.user)
         return queryset
 
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="success"
+    )
+    def success(self, request, pk=None):
+        return Response(
+            {"message": "Payment success"},
+            status=status.HTTP_200_OK
+        )
 
-
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="cancel"
+    )
+    def cancel(self, request, pk=None):
+        return Response(
+            {"message": "Payment cancelled"},
+            status=status.HTTP_200_OK
+        )
