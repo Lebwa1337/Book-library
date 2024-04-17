@@ -2,6 +2,8 @@ from datetime import datetime
 
 import stripe
 from django.db import transaction
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView
@@ -65,11 +67,31 @@ class BorrowingsViewSet(viewsets.ModelViewSet):
         user_id = self.request.query_params.get("user_id")
         if not self.request.user.is_staff:
             queryset = queryset.filter(user=self.request.user)
-        if is_active == "1":
+        if is_active == "true":
             queryset = queryset.filter(actual_return_date=None)
         if user_id and self.request.user.is_staff:
             queryset = queryset.filter(user_id=int(user_id))
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="is_active",
+                type=OpenApiTypes.BOOL,
+                location=OpenApiParameter.QUERY,
+                description="Filter borrowing what's currently active",
+            ),
+            OpenApiParameter(
+                name="user_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description='See other users borrowings if you are admin',
+            ),
+        ]
+
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class ReturnBorrowing(CreateAPIView):
@@ -95,7 +117,7 @@ class ReturnBorrowing(CreateAPIView):
 class PaymentViewSet(viewsets.ModelViewSet):
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAuthenticated, ]
 
     def get_queryset(self):
         queryset = Payment.objects.all()
