@@ -1,7 +1,5 @@
 import stripe
 from django.conf import settings
-from django.shortcuts import redirect
-from django.urls import reverse
 
 from borrowings.models import Borrowing, Payment
 
@@ -41,10 +39,10 @@ def stripe_helper(borrowing):
                      "payments/success/"),
         cancel_url="http://localhost:8000/api/payments/cancel/"
     )
-    Payment.objects.create(
+    payment = Payment.objects.create(
         borrowing=borrowing,
         session_url=checkout_session.url,
         session_id=checkout_session.id,
         money_to_pay=price["unit_amount"] / 100,
     )
-    return redirect(checkout_session.url, code=303)
+    return payment
