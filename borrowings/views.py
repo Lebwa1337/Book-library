@@ -124,7 +124,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        detail=False,
+        detail=True,
         methods=["get"],
         url_path="cancel"
     )
