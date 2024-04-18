@@ -7,8 +7,6 @@ services:
     container_name: app
     ports:
       - "8000:8001"
-    volumes:
-      - ./:/app
     env_file:
       - .env
     command: >
@@ -24,8 +22,6 @@ services:
     build: .
     command:
       celery -A book_library worker -l INFO &&
-    volumes:
-      - ./:/app
     depends_on:
       - app
       - redis

@@ -1,7 +1,6 @@
 import stripe
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from books.models import Book
@@ -12,8 +11,8 @@ class Borrowing(models.Model):
     borrow_date = models.DateField()
     expected_return_date = models.DateField()
     actual_return_date = models.DateField(null=True, blank=True)
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name="borrowings")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="borrowings")
 
     def __str__(self):
         return self.book.title
@@ -92,7 +91,7 @@ class Payment(models.Model):
         choices=PaymentType.choices,
         default=PaymentType.PAYMENT,
     )
-    borrowing = models.ForeignKey(Borrowing, on_delete=models.CASCADE, related_name="payment")
+    borrowing = models.ForeignKey(Borrowing, on_delete=models.CASCADE, related_name="payments")
     session_url = models.URLField(max_length=1000)
-    session_id = models.CharField(max_length=55)
+    session_id = models.CharField(max_length=255)
     money_to_pay = models.DecimalField(max_digits=5, decimal_places=2)
